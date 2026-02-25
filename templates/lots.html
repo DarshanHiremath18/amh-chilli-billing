@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Add Lot{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+  <div class="row">
+
+    <!-- LEFT SIDE : ADD LOT FORM -->
+    <div class="col-md-4 border-end">
+      <h4 class="mb-4 text-danger">🧾 Add Lot</h4>
+
+      <form method="POST" action="{{ url_for('lots') }}" id="lotForm">
+
+        <div class="mb-3">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-control" name="date" id="lot_date" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Lot Number</label>
+          <input type="text" class="form-control" name="lot_number" id="lot_number" readonly>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">City</label>
+          <input list="city_list" id="city" name="city" class="form-control" required>
+          <datalist id="city_list"></datalist>
+          <input type="hidden" id="city_id" name="city_id">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Farmer</label>
+          <select id="farmer_name" class="form-control" required>
+            <option value="">-- Select Farmer --</option>
+          </select>
+          <input type="hidden" id="farmer_id" name="farmer_id">
+          <small id="farmer_warning" class="text-danger" style="display:none;"></small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">No. of Bags</label>
+          <input type="number" class="form-control" name="no_of_bags" min="1" required>
+        </div>
+
+        <button type="submit" class="btn btn-danger w-100">💾 Save Lot</button>
+      </form>
+    </div>
+
+    <!-- RIGHT SIDE : LAST 5 LOTS -->
+    <div class="col-md-8">
+      <h4 class="text-secondary">📋 Last 5 Saved Lots</h4>
+
+      {% if lots %}
+      <div class="table-responsive mt-3">
+        <table class="table table-bordered table-striped align-middle">
+          <thead class="table-danger">
+            <tr>
+              <th>Lot</th>
+              <th>Date</th>
+              <th>City</th>
+              <th>Farmer</th>
+              <th>Bags</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for l in lots %}
+            <tr>
+              <td>{{ l.lot_number }}</td>
+              <td>{{ l.date }}</td>
+              <td>{{ l.city }}</td>
+              <td>{{ l.farmer }}</td>
+              <td>{{ l.bags }}</td>
+              <td>
+                <a href="{{ url_for('edit_lot', lot_id=l.lot_id) }}" class="btn btn-sm btn-primary">✏️</a>
+                <a href="{{ url_for('delete_lot', lot_id=l.lot_id) }}"
+                   class="btn btn-sm btn-danger"
+                   onclick="return confirm('Delete this lot?')">🗑️</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="text-muted mt-3">No lots added yet.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  
+document.addEventListener("DOMContentLoaded", async () => {
+
+  const lotNumberInput = document.getElementById("lot_number");
+  const dateInput = document.getElementById("lot_date");
+  const cityInput = document.getElementById("city");
+  const cityList = document.getElementById("city_list");
+  const cityIdInput = document.getElementById("city_id");
+
+  const farmerInput = document.getElementById("farmer_name");
+  const farmerIdInput = document.getElementById("farmer_id");
+  const farmerWarning = document.getElementById("farmer_warning");
+
+  const savedCityId = sessionStorage.getItem("city_id");
+  const savedCityName = sessionStorage.getItem("city_name");
+
+  if (savedCityId && savedCityName) {
+    cityInput.value = savedCityName;
+    cityIdInput.value = savedCityId;
+  }
+
+
+  /* ------------------------------------------------------
+      LOAD NEXT LOT #
+  ------------------------------------------------------ */
+async function loadNextLot() {
+    const res = await fetch("/get_next_lot");
+    const data = await res.json();
+    lotNumberInput.value = data.next_number || "1";
+  }
+
+const dateRes = await fetch("/get_current_date");
+const dateData = await dateRes.json();
+
+if (dateData.date) {
+  dateInput.value = dateData.date
+  await loadNextLot();
+}
+
+dateInput.addEventListener("change", async () => {
+  const selectedDate = dateInput.value;
+
+  await fetch("/set_lot_date", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date: selectedDate })
+  });
+  await loadNextLot();
+  location.reload();
+});
+
+
+
+
+  /* ------------------------------------------------------
+      LOAD CITY LIST INTO DATALIST
+  ------------------------------------------------------ */
+  
+  const cityRes = await fetch("/get_cities");
+  const cityData = await cityRes.json();
+
+  cityData.cities.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = `${c.city} — ${c.district}`;
+    opt.dataset.cityId = c.id;
+    cityList.appendChild(opt);
+    
+  });
+
+  cityInput.addEventListener("change", async () => {
+
+  const res = await fetch(
+    `/check_city?name=${encodeURIComponent(cityInput.value)}`
+  );
+  const data = await res.json();
+
+  if (!data.exists) {
+    alert("Invalid city selected");
+    cityInput.value = "";
+    cityIdInput.value = "";
+    return;
+  }
+
+  // Store selected city id
+  cityIdInput.value = data.id;
+
+  sessionStorage.setItem("city_id", data.id);
+  sessionStorage.setItem("city_name", cityInput.value);
+
+  // Reset farmer state because city changed
+  farmerInput.innerHTML = '<option value="">-- Select Farmer --</option>';
+  farmerIdInput.value = "";
+  farmerWarning.style.display = "none";
+
+  // Force farmer reload for new city
+  farmerInput.dataset.loaded = "";
+});
+
+
+
+
+  /* ------------------------------------------------------
+      LOAD FARMERS (ONLY ONCE PER CITY)
+  ------------------------------------------------------ */
+  farmerInput.addEventListener("click", async () => {
+    const cityId = cityIdInput.value;
+
+    if (!cityId) {
+      farmerWarning.style.display = "block";
+      farmerWarning.textContent = "⚠️ Select city first.";
+      return;
+    }
+
+    // already loaded? then don't fetch again
+    if (farmerInput.dataset.loaded === String(cityId)) {
+      return;
+    }
+
+    farmerInput.innerHTML = '<option value="">-- Select Farmer --</option>';
+    farmerIdInput.value = "";
+    farmerWarning.style.display = "none";
+
+    const res = await fetch(`/farmers_list_by_city/${cityId}?q=`);
+    const data = await res.json();
+
+    if (data.farmers.length === 0) {
+      farmerWarning.style.display = "block";
+      farmerWarning.textContent = "⚠️ No farmers found.";
+      return;
+    }
+
+    data.farmers.forEach(f => {
+      const opt = document.createElement("option");
+      opt.value = f.id;   // store farmer_id
+      opt.textContent = f.name;
+      farmerInput.appendChild(opt);
+    });
+
+    farmerInput.dataset.loaded = String(cityId);
+  });
+
+  /* ------------------------------------------------------
+      WHEN FARMER SELECTED → STORE farmer_id
+  ------------------------------------------------------ */
+  farmerInput.addEventListener("change", () => {
+    farmerIdInput.value = farmerInput.value;
+
+    if (!farmerIdInput.value) {
+      farmerWarning.style.display = "block";
+      farmerWarning.textContent = "⚠️ Please select a farmer.";
+    } else {
+      farmerWarning.style.display = "none";
+    }
+  });
+
+
+  /* ------------------------------------------------------
+      FORM VALIDATION
+  ------------------------------------------------------ */
+  document.getElementById("lotForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  if (!farmerIdInput.value) {
+    farmerWarning.style.display = "block";
+    farmerWarning.textContent = "⚠️ Please select a valid farmer.";
+    return;
+  }
+
+  const payload = {
+    lot_number: lotNumberInput.value,
+    city_id: cityIdInput.value,
+    farmer_id: farmerIdInput.value,
+    no_of_bags: document.querySelector("input[name='no_of_bags']").value
+  };
+
+  try {
+    const res = await fetch("/Save_lot", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data.status === "ok") {
+      alert("Lot saved successfully");
+       location.reload();
+
+      await loadNextLot();
+
+      
+    } else {
+      alert(data.error || "Error saving lot");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Server error. Please try again.");
+  }
+});
+});
+</script>
+{% endblock %}

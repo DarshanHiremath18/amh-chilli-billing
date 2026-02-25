@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Edit Lot{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row">
+
+    <!-- LEFT SIDE : EDIT FORM -->
+    <div class="col-md-4 border-end">
+      <h4 class="mb-4 text-danger">✏️ Edit Lot</h4>
+
+      <form method="POST"
+            action="{{ url_for('update_lot', lot_id=lot[0]) }}"
+            id="editLotForm">
+
+        <!-- Date (READ ONLY – important) -->
+        <!-- Date (READ ONLY TEXT) -->
+<div class="mb-3">
+  <label class="form-label">Date</label>
+  <input type="text"
+       class="form-control"
+       value="{{ lot[1] }}">
+      
+
+<input type="hidden"
+       name="date"
+       value="{{ lot[1] }}">
+
+</div>
+
+<!-- Lot Number -->
+<div class="mb-3">
+  <label class="form-label">Lot Number</label>
+  <input type="text"
+         class="form-control"
+         value="{{ lot[2] }}"
+         readonly>
+</div>
+
+<!-- City -->
+<div class="mb-3">
+  <label class="form-label">City</label>
+  <select id="city_id" name="city_id" class="form-control" required>
+    {% for c in cities %}
+    <option value="{{ c.id }}"
+      {% if c.id == lot[3] %}selected{% endif %}>
+      {{ c.city }} — {{ c.district }}
+    </option>
+    {% endfor %}
+  </select>
+</div>
+
+<!-- Farmer -->
+<div class="mb-3">
+  <label class="form-label">Farmer</label>
+  <select id="farmer_id" name="farmer_id" class="form-control" required>
+    <!-- options loaded by JS -->
+  </select>
+  <small id="farmer_warning" class="text-danger" style="display:none;"></small>
+</div>
+
+
+        <!-- Bags -->
+        <div class="mb-3">
+          <label class="form-label">No. of Bags</label>
+          <input type="number"
+                 class="form-control"
+                 name="no_of_bags"
+                 value="{{ lot[5] }}"
+                 min="1"
+                 required>
+        </div>
+
+        <button type="submit" class="btn btn-danger w-100">
+          💾 Update Lot
+        </button>
+      </form>
+    </div>
+
+    <!-- RIGHT SIDE : LAST 10 LOTS -->
+    <div class="col-md-8">
+      <h4 class="text-secondary">📋 Last 10 Lots</h4>
+
+      {% if lots %}
+      <div class="table-responsive mt-3">
+        <table class="table table-bordered table-striped align-middle">
+          <thead class="table-danger">
+            <tr>
+              <th>Lot</th>
+              <th>Date</th>
+              <th>City</th>
+              <th>Farmer</th>
+              <th>Bags</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for l in lots %}
+            <tr {% if l.lot_id == lot[0] %}class="table-warning"{% endif %}>
+              <td>{{ l.lot_number }}</td>
+              <td>{{ l.date }}</td>
+              <td>{{ l.city }}</td>
+              <td>{{ l.farmer }}</td>
+              <td>{{ l.bags }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="text-muted">No lots available</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+
+  const citySelect = document.getElementById("city_id");
+  const farmerSelect = document.getElementById("farmer_id");
+  const farmerWarning = document.getElementById("farmer_warning");
+
+  const existingFarmerId = "{{ lot[4] }}";
+
+  /* ------------------------------------------------------
+     LOAD FARMERS AND TRY TO KEEP EXISTING FARMER
+  ------------------------------------------------------ */
+  async function loadFarmers(cityId, preferredFarmerId = null) {
+
+    farmerSelect.innerHTML = '<option value="">-- Select Farmer --</option>';
+    farmerWarning.style.display = "none";
+
+    if (!cityId) return;
+
+    const res = await fetch(`/farmers_list_by_city/${cityId}`);
+    const data = await res.json();
+
+    let farmerStillValid = false;
+
+    data.farmers.forEach(f => {
+      const opt = document.createElement("option");
+      opt.value = f.id;
+      opt.textContent = f.name;
+
+      // 🔑 keep farmer if valid
+      if (preferredFarmerId && String(f.id) === String(preferredFarmerId)) {
+        opt.selected = true;
+        farmerStillValid = true;
+      }
+
+      farmerSelect.appendChild(opt);
+    });
+
+    // if farmer not valid for new city → force reselect
+    if (!farmerStillValid && preferredFarmerId) {
+      farmerSelect.value = "";
+      farmerWarning.style.display = "block";
+      farmerWarning.textContent =
+        "⚠️ This farmer is not available in the selected city.";
+    }
+  }
+
+  /* ------------------------------------------------------
+     ON PAGE LOAD (EDIT MODE)
+  ------------------------------------------------------ */
+  await loadFarmers(citySelect.value, existingFarmerId);
+
+  /* ------------------------------------------------------
+     CITY CHANGED
+  ------------------------------------------------------ */
+  citySelect.addEventListener("change", async () => {
+    await loadFarmers(citySelect.value, farmerSelect.value);
+  });
+
+  /* ------------------------------------------------------
+     FORM VALIDATION
+  ------------------------------------------------------ */
+  document.getElementById("editLotForm").addEventListener("submit", (e) => {
+    if (!farmerSelect.value) {
+      e.preventDefault();
+      farmerWarning.style.display = "block";
+      farmerWarning.textContent = "⚠️ Please select a farmer.";
+    }
+  });
+
+});
+</script>
+{% endblock %}
+

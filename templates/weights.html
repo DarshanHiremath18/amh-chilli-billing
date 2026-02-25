@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Enter Weights{% endblock %}
+
+{% block content %}
+<h2 class="text-danger mb-4">⚖️ Enter Bag Weights</h2>
+
+<!-- Select Date -->
+<div class="mb-3">
+  <label class="form-label">Select Date</label>
+  <input type="date" id="weight_date" class="form-control">
+</div>
+
+<!-- Select Lot -->
+<div class="mb-3">
+  <label class="form-label">Select Lot</label>
+  <select id="lot_select" class="form-control">
+    <option value="">-- Select Date First --</option>
+  </select>
+</div>
+
+<hr>
+
+<!-- Auto-filled details -->
+<div id="lot_details" style="display:none;">
+  <p><strong>City:</strong> <span id="city"></span></p>
+  <p><strong>Farmer:</strong> <span id="farmer"></span></p>
+  <p><strong>Purchaser:</strong> <span id="purchaser"></span></p>
+  <p><strong>Rate:</strong> ₹ <span id="rate"></span></p>
+  <p><strong>No. of Bags:</strong> <span id="bags"></span></p>
+</div>
+
+<hr>
+
+<!-- Bag weight input table -->
+<div id="weights_section" style="display:none;">
+  <h4>Enter Weights</h4>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Bag #</th>
+        <th>Weight (kg)</th>
+      </tr>
+    </thead>
+    <tbody id="weight_rows"></tbody>
+  </table>
+</div>
+
+<h4>Total Weight: <span id="total_weight">0</span> kg</h4>
+
+<button id="save_weights" class="btn btn-danger w-100 mt-3" style="display:none;">💾 Save Weights</button>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+document.getElementById("weight_date").addEventListener("change", async () => {
+  const date = document.getElementById("weight_date").value;
+  const lotSelect = document.getElementById("lot_select");
+
+  const res = await fetch(`/get_all_lots_of_date?date=${date}`);
+  const data = await res.json();
+
+  lotSelect.innerHTML = "<option value=''>-- Select Lot --</option>";
+
+  data.lots.forEach(l => {
+    const opt = document.createElement("option");
+    opt.value = JSON.stringify(l);
+    opt.textContent = `Lot ${l.lot_number} - ${l.farmer}`;
+    lotSelect.appendChild(opt);
+  });
+});
+
+document.getElementById("lot_select").addEventListener("change", () => {
+  const selectedValue = document.getElementById("lot_select").value;
+  if (!selectedValue) return;
+
+  const lot = JSON.parse(event.target.value);
+
+  document.getElementById("city").textContent = lot.city;
+  document.getElementById("farmer").textContent = lot.farmer;
+  document.getElementById("purchaser").textContent = lot.purchaser;
+  document.getElementById("bags").textContent = lot.bags;
+  document.getElementById("rate").textContent = lot.rate;
+
+  document.getElementById("lot_details").style.display = "block";
+  document.getElementById("weights_section").style.display = "block";
+  document.getElementById("save_weights").style.display = "block";
+
+  let rows = "";
+  for(let i=1; i<= lot.bags; i++) {
+    rows += `
+      <tr>
+        <td>${i}</td>
+        <td><input type="number" class="form-control weight_input" data-index="${i}" step="0.01"></td>
+      </tr>
+    `;
+  }
+  document.getElementById("weight_rows").innerHTML = rows;
+});
+
+// ---- LIVE TOTAL CALCULATION ----
+document.addEventListener("input", () => {
+  let total = 0;
+  document.querySelectorAll(".weight_input").forEach(input => {
+    total += parseFloat(input.value) || 0;
+  });
+  document.getElementById("total_weight").textContent = total.toFixed(2);
+});
+
+
+// ---- 🔥 ENTER KEY MOVES TO NEXT INPUT ----
+document.addEventListener("keydown", function(event) {
+  if (event.target.classList.contains("weight_input") && event.key === "Enter") {
+      event.preventDefault();
+
+      const currentValue = event.target.value.trim();
+      if (currentValue === "") {
+          event.target.style.border = "2px solid red";
+          event.target.placeholder = "Required!";
+          return;
+      } else {
+          event.target.style.border = ""; // clear styling
+      }
+
+      
+
+      const inputs = Array.from(document.querySelectorAll(".weight_input"));
+      const index = inputs.indexOf(event.target);
+
+      if (index < inputs.length - 1) {
+          inputs[index + 1].focus();
+          inputs[index + 1].select(); // highlight for quick edit
+      } else {
+          document.getElementById("save_weights").focus();
+      }
+  }
+ });
+
+//--------- Save weights ---------
+document.getElementById("save_weights").addEventListener("click", async () => {
+
+  const lotData = document.getElementById("lot_select").value;
+  if (!lotData) {
+    alert("Please select a lot first.");
+    return;
+  }
+
+  const lot = JSON.parse(lotData);
+  const lot_id = lot.lot_id;
+
+  // Collect all bag weights
+  const weights = Array.from(document.querySelectorAll(".weight_input"))
+                      .map(input => input.value.trim());
+
+  // Check if all weights are entered
+  if (weights.some(w => w === "")) {
+    const confirmSave = confirm(
+      "Some weights are empty. Do you still want to save?"
+    );
+    if (!confirmSave) return;
+  }
+
+  // Send the data to Flask
+  const response = await fetch("/save_weight", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      lot_id: lot_id,
+      weights: weights
+    })
+  });
+
+  const result = await response.json();
+
+  if (result.error) {
+    alert("❌ Error: " + result.error);
+  } else {
+    alert("✅ Saved Successfully!\nTotal Weight: " + result.total_weight + " kg");
+    document.getElementById("total_weight").textContent = result.total_weight;
+  }
+});
+
+
+</script>
+{% endblock %}

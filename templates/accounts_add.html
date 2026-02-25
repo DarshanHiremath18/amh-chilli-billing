@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid mt-4">
+<div class="row">
+ 
+<div class="col-md-4 rate-left">
+
+<div class="container-fluid px-4 content-container">
+  <h2 class="mb-4">{{ 'Edit Account' if account else 'Add Account' }}</h2>
+
+  <form method="POST"
+        action="{{ url_for('add_account', account_id=account.account_id) if account else url_for('add_account') }}">
+
+    <!-- Account Type -->
+    <div class="mb-3">
+      <label class="form-label">Type *</label>
+      <select name="type" id="accountType" class="form-select" required>
+        <option value="">-- Select --</option>
+        <option value="Farmer"    {% if account and account.type == 'Farmer'    %}selected{% endif %}>Farmer</option>
+        <option value="Purchaser" {% if account and account.type == 'Purchaser' %}selected{% endif %}>Purchaser</option>
+      </select>
+    </div>
+
+    <!-- City Selection -->
+    <div class="mb-3">
+      <label for="city" class="form-label">Select City *</label>
+      <input list="city_list"
+             id="city"
+             name="city"
+             class="form-control"
+             autocomplete="off"
+             placeholder="Select or type city"
+             value="{{ selected_city_label if account else '' }}"
+             required>
+      <datalist id="city_list">
+        {% for c in cities %}
+          <option value="{{ c.city }} — {{ c.district }}"></option>
+        {% endfor %}
+      </datalist>
+      <input type="hidden" id="city_id" name="city_id"
+             value="{{ account.city_id if account else '' }}">
+    </div>
+
+    <!-- Add City Section (hidden by default) -->
+    <div class="row mt-3" id="city_section" style="display: none;">
+      <div class="col-md-4">
+        <input type="text" id="city_name" class="form-control" placeholder="City Name">
+      </div>
+      <div class="col-md-4">
+        <input type="text" id="district_name" class="form-control" placeholder="District">
+      </div>
+      <div class="col-md-4">
+        <input type="text" id="state_name" class="form-control" placeholder="State">
+      </div>
+      <div class="col-12 mt-2">
+        <button type="button" id="add_city_btn" class="btn btn-success">Add City</button>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- Names -->
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">First Name *</label>
+        <input name="first_name" class="form-control" required
+               value="{{ account.first_name if account else '' }}">
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Middle Name</label>
+        <input name="middle_name" class="form-control"
+               value="{{ account.middle_name if account else '' }}">
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Last Name</label>
+        <input name="last_name" class="form-control"
+               value="{{ account.last_name if account else '' }}">
+      </div>
+    </div>
+
+    <!-- Purchaser-only fields -->
+    <div class="row">
+      <div class="col-md-4 mb-3 company-name" style="display:none;">
+        <label class="form-label">Company Name </label>
+        <input name="company_name" class="form-control" maxlength="50"
+               value="{{ account.company_name if account else '' }}">
+      </div>
+      <div class="col-md-4 mb-3 short-name" style="display:none;">
+        <label class="form-label">Short Name </label>
+        <input name="short_name" class="form-control" maxlength="10"
+               value="{{ account.short_name if account else '' }}">
+      </div>
+      <div class="col-md-4 mb-3 gst-field" style="display:none;">
+        <label class="form-label">GST </label>
+        <input name="gst" class="form-control" maxlength="15"
+               value="{{ account.gst if account else '' }}">
+      </div>
+    </div>
+
+    <!-- Identification -->
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Aadhaar </label>
+        <input name="adhar" class="form-control" maxlength="12" pattern="\d{12}" 
+               value="{{ account.adhar if account else '' }}">
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">PAN</label>
+        <input name="pan" class="form-control" maxlength="10"
+               value="{{ account.pan if account else '' }}">
+      </div>
+    </div>
+
+    <!-- Bank Details -->
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Account Name *</label>
+        <input name="account_name" class="form-control" required
+               value="{{ account.account_name if account else '' }}">
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Account Number *</label>
+        <input name="account_number" class="form-control" required
+               value="{{ account.account_number if account else '' }}">
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Bank Name *</label>
+        <input name="bank_name" class="form-control" required
+               value="{{ account.bank_name if account else '' }}">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">IFSC *</label>
+        <input name="ifsc_code" class="form-control" required
+               value="{{ account.ifsc_code if account else '' }}">
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Mobile *</label>
+        <input name="mobile" class="form-control" maxlength="10" pattern="\d{10}" required
+               value="{{ account.mobile if account else '' }}">
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Email</label>
+        <input name="email" class="form-control"
+               value="{{ account.email if account else '' }}">
+      </div>
+    </div>
+
+    <button class="btn btn-success" type="submit">Save</button>
+    <a href="{{ url_for('accounts_home') }}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+</div>
+
+ <div class="col-md-8 rate-right">
+  <h4 class="text-secondary">
+    📋 
+    {% if account %}
+      Account Details of {{ account.city }} farmers
+    {% else %}
+      Instructions
+    {% endif %}
+  </h4>
+
+  {% if right_side_accounts %}
+    {% for acc in right_side_accounts %}
+      <div class="border-bottom py-2">
+        <strong>
+          {{ acc.first_name }}
+          {{ acc.middle_name or '' }}
+          {{ acc.last_name }}
+        </strong><br>
+        <small class="text-muted">{{ acc.city }}</small>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-muted">No accounts to display</p>
+  {% endif %}
+</div>
+</div>
+
+
+
+ 
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+  // Jinja -> JS bridge: boolean edit flag
+  const IS_EDIT = {{ (account is not none)|tojson }};
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector("form");
+    const typeSelect   = document.getElementById("accountType");
+    const cityInput    = document.getElementById("city");
+    const cityIdHidden = document.getElementById("city_id");
+    const citySection  = document.getElementById("city_section");
+    const cityName     = document.getElementById("city_name");
+    const districtName = document.getElementById("district_name");
+    const stateName    = document.getElementById("state_name");
+    const addCityBtn   = document.getElementById("add_city_btn");
+
+    const blurredFields = form.querySelectorAll(`
+      input[name='first_name'],
+      input[name='middle_name'],
+      input[name='last_name'],
+      input[name='adhar'],
+      input[name='pan'],
+      input[name='account_name'],
+      input[name='account_number'],
+      input[name='bank_name'],
+      input[name='ifsc_code'],
+      input[name='mobile'],
+      input[name='email']
+    `);
+
+    function setBlur(disabled) {
+      blurredFields.forEach(field => {
+        field.disabled = disabled;
+        field.style.filter = disabled ? "blur(2px)" : "none";
+        field.style.pointerEvents = disabled ? "none" : "auto";
+      });
+    }
+
+    function toggleGST() {
+      const type = typeSelect.value;
+      const show = (type === "Purchaser");
+      document.querySelector(".gst-field").style.display     = show ? "block" : "none";
+      document.querySelector(".company-name").style.display  = show ? "block" : "none";
+      document.querySelector(".short-name").style.display    = show ? "block" : "none";
+    }
+
+    // ---------- Initial state ----------
+    if (IS_EDIT) {
+      // Edit mode → everything ready
+      typeSelect.disabled = false;
+      cityInput.disabled  = false;
+      setBlur(false);
+    } else {
+      // Add mode → lock everything until type & city ok
+      setBlur(true);
+      cityInput.disabled = true;
+    }
+    toggleGST();
+
+    // ---------- Type change ----------
+    typeSelect.addEventListener("change", function () {
+      toggleGST();
+      if (typeSelect.value) {
+        cityInput.disabled = false;
+        cityInput.style.filter = "none";
+      } else {
+        cityInput.value = "";
+        cityIdHidden.value = "";
+        cityInput.disabled = true;
+        setBlur(true);
+      }
+    });
+
+    // ---------- Load city list (autocomplete) ----------
+    fetch("/get_cities")
+      .then(res => res.json())
+      .then(data => {
+        const datalist = document.getElementById("city_list");
+        data.cities.forEach(item => {
+          const option = document.createElement("option");
+          option.value = `${item.city} — ${item.district}`;
+          datalist.appendChild(option);
+        });
+      });
+
+    // ---------- City check (only in ADD mode) ----------
+    cityInput.addEventListener("blur", async function () {
+      if (IS_EDIT) return;  // skip in edit mode
+
+      const cityValue = cityInput.value.trim();
+      if (!cityValue) return;
+
+      const response = await fetch(`/check_city?name=${encodeURIComponent(cityValue)}`);
+      const data = await response.json();
+
+      if (data.exists) {
+        cityIdHidden.value = data.id;
+        citySection.style.display = "none";
+        setBlur(false);
+      } else {
+        citySection.style.display = "block";
+        setBlur(true);
+      }
+    });
+
+    // ---------- Add new city ----------
+    addCityBtn.addEventListener("click", async function () {
+      const city    = cityName.value.trim();
+      const district = districtName.value.trim();
+      const state   = stateName.value.trim();
+
+      if (!city || !district || !state) {
+        alert("Please fill all fields before adding city.");
+        return;
+      }
+
+      const response = await fetch("/adding_city_ajax", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ city, district, state })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const datalist = document.getElementById("city_list");
+        const option = document.createElement("option");
+        option.value = `${data.city_name} — ${data.district}`;
+        datalist.appendChild(option);
+
+        cityInput.value = option.value;
+        cityIdHidden.value = data.city_id;
+        citySection.style.display = "none";
+        setBlur(false);
+      } else {
+        alert(data.message);
+      }
+    });
+  });
+</script>
+{% endblock %}

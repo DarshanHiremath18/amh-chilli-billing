@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% block title %}Add Rate{% endblock %}
+
+{% block content %}
+
+<div class="row rate-page">
+
+  <!-- LEFT SIDE -->
+  <div class="col-md-4 rate-left">
+
+    <!-- DATE -->
+    <label>Select Date</label>
+    <input type="date" id="rate_date" class="form-control mb-3">
+
+    <!-- LOT -->
+    <label>Select Lot</label>
+    <select id="lotDropdown" class="form-control mb-3" disabled>
+      <option value="">Select lot</option>
+    </select>
+
+    <!-- NO OF BAGS -->
+    <label>No. of Bags</label>
+    <input type="number" id="no_of_bags" class="form-control mb-3" readonly>
+
+    <!-- PURCHASER -->
+    <label>Purchaser</label>
+    <select id="purchaser" class="form-control mb-3">
+      <option value="">Select purchaser</option>
+    </select>
+
+    <!-- RATE -->
+    <label>Rate</label>
+    <input type="number" id="rate" class="form-control mb-3">
+
+    <button id="saveRateBtn" class="btn btn-success w-100">
+      Save Rate
+    </button>
+  </div>
+
+  <!-- RIGHT SIDE -->
+  <div class="col-md-8 rate-right">
+    <div id="lotPreview" class="preview-box">
+      <p class="text-muted">Select a date to view lots</p>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast" class="toast-message"></div>
+
+
+<script>
+/* -------------------- STATE -------------------- */
+let alllots = [];
+let selected_lot = null;
+
+
+const lotDropdown = document.getElementById("lotDropdown");
+
+/* -------------------- DATE CHANGE -------------------- */
+document.getElementById("rate_date").addEventListener("change", function () {
+  const selectedDate = this.value;
+
+  selected_lot = null;
+  document.getElementById("no_of_bags").value = "";
+  lotDropdown.disabled = true;
+  lotDropdown.innerHTML = `<option value="">Select lot</option>`;
+  alllots = [];
+  renderLotsPreview();
+
+  if (!selectedDate) return;
+
+  fetch(`/get_lots_by_date?date=${selectedDate}`)
+    .then(res => res.json())
+    .then(data => {
+      alllots = data.lots || [];
+
+      if (alllots.length === 0) {
+        alert("No lots found for this date");
+        return;
+      }
+
+      lotDropdown.disabled = false;
+
+      alllots.forEach(lot => {
+        const option = document.createElement("option");
+        option.value = lot.lot_id;          // internal
+        option.textContent = lot.lot_number; // user sees
+        lotDropdown.appendChild(option);
+      });
+
+      renderLotsPreview();
+    });
+});
+
+/* -------------------- LOT CHANGE -------------------- */
+lotDropdown.addEventListener("change", function () {
+  const lotId = this.value;
+  if (!lotId) return;
+
+  selected_lot = alllots.find(lot => String(lot.lot_id) === String(lotId));
+  if (!selected_lot) return;
+
+  document.getElementById("no_of_bags").value = selected_lot.bags;
+});
+/*------- After saving the lot clear the lot and purchaser */
+function clearLeftForm(){
+    document.getElementById("purchaser").value = "";
+    document.getElementById("rate").value = "";
+}
+/* -------------------- SAVE RATE -------------------- */
+document.getElementById("saveRateBtn").addEventListener("click", function () {
+  const rate = document.getElementById("rate").value;
+  const purchaserSelect = document.getElementById("purchaser");
+  const purchaserId = purchaserSelect.value;
+
+  if (!selected_lot) {
+    alert("Please select a lot");
+    return;
+  }
+  if (!rate) {
+    alert("Please enter rate");
+    return;
+  }
+  if (!purchaserId) {
+    alert("Please select purchaser");
+    return;
+  }
+
+    selected_lot.rate = rate;
+    selected_lot.purchaser_name =
+  purchaserSelect.options[purchaserSelect.selectedIndex].text;
+
+
+  fetch("/save_rate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      lot_id: selected_lot.lot_id,
+      purchaser_id: purchaserId,
+      rate: rate
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === "success") {
+      showToast("Saved ✔");
+renderLotsPreview();
+moveToNextLot();
+clearLeftForm();
+
+    } else {
+      alert("❌ Error: " + data.message);
+    }
+  });
+});
+
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    e.preventDefault(); // ⛔ stop form submit / reload
+
+    // Only trigger if focus is inside rate input
+    if (document.activeElement.id === "rate") {
+      document.getElementById("saveRateBtn").click();
+    }
+  }
+});
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.innerText = message;
+  toast.style.display = "block";
+
+  setTimeout(() => {
+    toast.style.display = "none";
+  }, 1500); // auto-hide
+}
+
+
+/* -------------------- PURCHASER LOAD -------------------- */
+document.addEventListener("DOMContentLoaded", () => {
+  fetch("/get_purchaser_for_rate")
+    .then(res => res.json())
+    .then(data => {
+      const purchaser = document.getElementById("purchaser");
+      data.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.short_name;
+        purchaser.appendChild(opt);
+      });
+    });
+});
+
+function moveToNextLot() {
+  if (!selected_lot || alllots.length === 0) return;
+
+  const currentIndex = alllots.findIndex(
+    lot => String(lot.lot_id) === String(selected_lot.lot_id)
+  );
+
+  // If current lot not found (edge case)
+  if (currentIndex === -1) return;
+
+  const nextIndex = currentIndex + 1;
+
+  // If next lot exists → auto-select
+  if (nextIndex < alllots.length) {
+    const nextLot = alllots[nextIndex];
+
+    // Auto-select dropdown
+    lotDropdown.value = nextLot.lot_id;
+
+    //  Trigger change handler manually
+    lotDropdown.dispatchEvent(new Event("change"));
+  } else {
+    // Optional: all lots done
+    alert(" All lots completed for this date");
+  }
+}
+
+function edit_lot(lot_id) {
+  
+    const lot = alllots.find(l => String(l.lot_id) === String(lot_id));
+    if (!lot) return;
+
+    //  Pre-fill form
+    lotDropdown.value = lot.lot_id;
+    lotDropdown.dispatchEvent(new Event("change"));
+
+    document.getElementById("rate").value = lot.rate ?? "";
+
+    document.getElementById("purchaser").value = lot.purchaser_id ?? "";
+    for(let i=0; i < document.getElementById("purchaser").options.length; i++) {
+      if (document.getElementById("purchaser").options[i].value == lot.purchaser_id) {
+        document.getElementById("purchaser").selectedIndex = i;
+        break;
+      }
+    }
+}
+
+function delete_lot(lot_id) {
+  if (!confirm("Delete this lot?")) return;
+
+  fetch(`/delete_lot/${lot_id}`, { method: "DELETE" })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === "success") {
+        alert("Lot deleted");
+        location.reload();
+      } else {
+        alert("Error deleting lot");
+      }
+    });
+}
+/* -------------------- RENDER RIGHT SIDE -------------------- */
+function renderLotsPreview() {
+  if (alllots.length === 0) {
+    document.getElementById("lotPreview").innerHTML =
+      `<p class="text-muted">No lots to display</p>`;
+    return;
+  }
+
+  let html = `<table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Lot No</th>
+        <th>Farmer</th>
+        <th>City</th>
+        <th>Bags</th>
+        <th>Rate</th>
+        <th>Purchaser</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  alllots.forEach(lot => {
+    html += `<tr class="${selected_lot && lot.lot_id === selected_lot.lot_id ? 'selected-row' : ''}">
+      <td>${lot.lot_number}</td>
+      <td>${lot.farmer}</td>
+      <td>${lot.city}</td>
+      <td>${lot.bags}</td>
+      <td>${lot.rate ?? '-'}</td>
+        <td>${lot.purchaser_name ?? '-'}</td>
+     <td>
+      <button class="btn btn-sm btn-primary"
+        onclick="editLot(${lot.lot_id})">✏️</button>
+
+      <button class="btn btn-sm btn-danger"
+        onclick="deleteLot(${lot.lot_id})">🗑️</button>
+    </td>
+  </tr>`;
+});
+   
+
+  html += `</tbody></table>`;
+  document.getElementById("lotPreview").innerHTML = html;
+}
+</script>
+
+{% endblock %}
+

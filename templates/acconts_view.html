@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4">View {{ title }}</h2>
+
+<table class="table table-bordered table-hover align-middle">
+  <thead class="table-dark">
+    <tr>
+      <th>ID</th>
+      <th>Type</th>
+      <th>Name</th>
+      <th>Aadhaar</th>
+      <th>Mobile</th>
+      <th>Bank</th>
+      <th>Account No</th>
+      <th>IFSC</th>
+      <th>GST</th>
+      <th>PAN</th>
+      <th>District</th>
+      <th>City</th>
+      <th>Email</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in accounts %}
+    <tr>
+      <td>{{ a.account_id }}</td>
+      <td>{{ a.account_type }}</td>
+      <td>{{ a.first_name }} {{ a.middle_name }} {{ a.last_name }}</td>
+      <td>{{ a.adhar }}</td>
+      <td>{{ a.mobile }}</td>
+      <td>{{ a.bank_name }}</td>
+      <td>{{ a.account_number }}</td>
+      <td>{{ a.ifsc_code }}</td>
+      <td>{{ a.gst or '-' }}</td>
+      <td>{{ a.pan or '-' }}</td>
+      <td>{{ a.district or '-' }}</td>
+      <td>{{ a.city or '-' }}</td>
+      <td>{{ a.email or '-' }}</td>
+      <td>
+        <a href="{{ url_for('add_account', account_id=a.account_id) }}" class="btn btn-sm btn-info">✏️ Edit</a>
+        <a href="{{ url_for('delete_account', account_id=a.account_id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this account?')">🗑 Delete</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

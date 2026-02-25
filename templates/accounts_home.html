@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+/* Page title styling */
+.page-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #343a40;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+/* Button group container */
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+/* Custom button base style */
+.custom-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+/* Hover effect for all buttons */
+.custom-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+}
+
+/* Individual button colors */
+.success-btn {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.primary-btn {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.warning-btn {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .button-group {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
+    .custom-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<h2 class="mb-4 page-title">Manage Accounts</h2>
+
+<div class="button-group">
+  <a href="{{ url_for('add_account') }}" class="btn custom-btn success-btn">➕ Add Account</a>
+  <a href="{{ url_for('view_accounts' , account_type='Farmer') }}" class="btn custom-btn primary-btn">👨‍🌾 View Farmers</a>
+  <a href="{{ url_for('view_accounts' , account_type='Purchaser') }}" class="btn custom-btn warning-btn">🧾 View Purchasers</a>
+</div>
+{% endblock %}

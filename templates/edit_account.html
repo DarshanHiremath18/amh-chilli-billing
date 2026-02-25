@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center mb-4 text-success">Edit {{ account.type }} Account</h2>
+
+  <form method="POST">
+    <!-- Account Type (Read-only) -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label>Account Type</label>
+        <input type="text" class="form-control" name="type" value="{{ account.type }}" readonly>
+      </div>
+    </div>
+
+    <!-- Personal Details -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label>First Name</label>
+        <input type="text" class="form-control" name="first_name" value="{{ account.first_name or '' }}" required>
+      </div>
+      <div class="col-md-4">
+        <label>Middle Name</label>
+        <input type="text" class="form-control" name="middle_name" value="{{ account.middle_name or '' }}">
+      </div>
+      <div class="col-md-4">
+        <label>Last Name</label>
+        <input type="text" class="form-control" name="last_name" value="{{ account.last_name or '' }}">
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label>Aadhaar</label>
+        <input type="text" class="form-control" name="adhar" value="{{ account.adhar or '' }}" required>
+      </div>
+      <div class="col-md-6">
+        <label>PAN</label>
+        <input type="text" class="form-control" name="pan" value="{{ account.pan or '' }}">
+      </div>
+    </div>
+
+    <!-- Purchaser-specific fields -->
+    {% if account.type == 'Purchaser' %}
+    <div id="purchaserFields">
+      <h5 class="text-primary mt-4 mb-3">Purchaser Details</h5>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label>Company Name</label>
+          <input type="text" class="form-control" name="company_name" value="{{ account.company_name or '' }}" required>
+        </div>
+        <div class="col-md-4">
+          <label>Short Name</label>
+          <input type="text" class="form-control" name="short_name" value="{{ account.short_name or '' }}" required>
+        </div>
+        <div class="col-md-4">
+          <label>GST</label>
+          <input type="text" class="form-control" name="gst" value="{{ account.gst or '' }}" required>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Bank Details -->
+    <h5 class="text-primary mt-4 mb-3">Bank Details</h5>
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label>Account Name</label>
+        <input type="text" class="form-control" name="account_name" value="{{ account.account_name or '' }}" required>
+      </div>
+      <div class="col-md-6">
+        <label>Account Number</label>
+        <input type="text" class="form-control" name="account_number" value="{{ account.account_number or '' }}" required>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label>Bank Name</label>
+        <input type="text" class="form-control" name="bank_name" value="{{ account.bank_name or '' }}">
+      </div>
+      <div class="col-md-6">
+        <label>IFSC Code</label>
+        <input type="text" class="form-control" name="ifsc_code" value="{{ account.ifsc_code or '' }}">
+      </div>
+    </div>
+
+    <!-- Address Details -->
+    <h5 class="text-primary mt-4 mb-3">Address Details</h5>
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label>District</label>
+        <input type="text" class="form-control" name="district" value="{{ account.district or '' }}">
+      </div>
+      <div class="col-md-6">
+        <label>City</label>
+        <input type="text" class="form-control" name="city" value="{{ account.city or '' }}">
+      </div>
+    </div>
+
+    <!-- Contact Details -->
+    <h5 class="text-primary mt-4 mb-3">Contact Details</h5>
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label>Mobile</label>
+        <input type="text" class="form-control" name="mobile" value="{{ account.mobile or '' }}" required>
+      </div>
+      <div class="col-md-6">
+        <label>Email</label>
+        <input type="email" class="form-control" name="email" value="{{ account.email or '' }}">
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="text-center mt-4">
+      <button type="submit" class="btn btn-success px-4">Update</button>
+      <a href="{{ url_for('view_accounts', account_type=account.type) }}" class="btn btn-secondary px-4">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<style>
+  .container {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  label {
+    font-weight: 500;
+    color: #198754;
+  }
+  .btn {
+    border-radius: 25px;
+  }
+</style>
+{% endblock %}

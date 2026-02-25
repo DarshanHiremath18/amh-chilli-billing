@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard | Chilli System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8f9fa;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 240px;
+      background-color: #8B0000; /* deep red */
+      color: #fff;
+      padding-top: 20px;
+    }
+    .sidebar h4 {
+      text-align: center;
+      margin-bottom: 40px;
+      font-weight: 600;
+    }
+    .sidebar a {
+      display: block;
+      color: #fff;
+      padding: 12px 20px;
+      text-decoration: none;
+      font-size: 15px;
+      transition: background 0.3s;
+    }
+    .sidebar a:hover, .sidebar a.active {
+      background-color: #a52a2a;
+      border-radius: 10px;
+    }
+    .sidebar .admin-section {
+      font-size: 13px;
+      text-transform: uppercase;
+      padding-left: 20px;
+      margin-top: 20px;
+      opacity: 0.7;
+    }
+    .content {
+      margin-left: 260px;
+      padding: 30px;
+    }
+    .user-info {
+      position: absolute;
+      bottom: 60px;
+      left: 20px;
+      font-size: 14px;
+    }
+    .logout {
+      position: absolute;
+      bottom: 15px;
+      left: 20px;
+    }
+    .logout a {
+      color: #fff;
+      text-decoration: none;
+    }
+    .card {
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h4><i class="fa-solid fa-pepper-hot"></i> Chilli System</h4>
+
+    <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
+      <i class="fa-solid fa-table-columns me-2"></i> Dashboard
+    </a>
+
+    <a href="{{ url_for('accounts_home') }}" class="{% if request.endpoint == 'accounts' %}active{% endif %}">
+      <i class="fa-solid fa-user-group me-2"></i> Accounts
+    </a>
+
+    <a href="{{ url_for('cities') }}" class="{% if request.endpoint == 'cities' %}active{% endif %}">
+      <i class="fa-solid fa-location-dot me-2"></i> Cities
+    </a>
+
+   
+
+    <a href="{{ url_for('lots') }}" class="{% if request.endpoint == 'lots' %}active{% endif %}">
+      <i class="fa-solid fa-box-open me-2"></i> Add Lot
+    </a>
+
+    <a href="{{ url_for('rates') }}" class="{% if request.endpoint == 'rates' %}active{% endif %}">
+      <i class="fa-solid fa-tag me-2"></i> Add Rate
+    </a>
+     <a href="{{ url_for('weights') }}" class="{% if request.endpoint == 'rates' %}active{% endif %}">
+      <i class="fa-solid fa-tag me-2"></i> Add Weights
+    </a>
+   
+
+   
+
+
+    <div class="user-info">
+      <div><strong>{{ username }}</strong></div>
+      <div>{{ session.get('email', 'user@email.com') }}</div>
+    </div>
+
+    <div class="logout">
+      <a href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</a>
+    </div>
+  </div>
+
+<div class="dashboard-header text-center p-5 mb-4">
+
+  <h1 class="fw-bold mb-3 welcome-title">
+     Welcome, {{ session["company_name"] or session["email"] }}!
+  </h1>
+
+  <p class="lead welcome-subtitle">
+    Manage your chilli business efficiently from here Created BY A.M.Hiremath
+
+</div>
+</body>
+</html>
+{% endblock %}

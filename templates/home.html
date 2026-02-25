@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script>
+    function toggleForm(id) {
+      const forms = document.querySelectorAll('.form-card');
+      forms.forEach(f => f.style.display = 'none');
+      document.getElementById(id).style.display = 'block';
+    }
+  </script>
+</head>
+<body class="bg-light">
+
+<div class="container mt-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Welcome, {{ username }}</h3>
+    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="mb-3">
+    <button class="btn btn-primary me-2" onclick="toggleForm('accountForm')">Add Account</button>
+    <button class="btn btn-secondary me-2" onclick="toggleForm('cityForm')">Add City</button>
+    <button class="btn btn-info me-2" onclick="toggleForm('headForm')">Add Account Head</button>
+    <button class="btn btn-warning me-2" onclick="toggleForm('lotForm')">Add Lot</button>
+    <button class="btn btn-success" onclick="toggleForm('billingForm')">Add Billing</button>
+  </div>
+
+  <!-- Filter Buttons -->
+  <div class="mb-3">
+    <a href="{{ url_for('view_accounts', account_type='Farmer') }}" class="btn btn-primary me-2">View Farmers</a>
+    <a href="{{ url_for('view_accounts', account_type='Purchaser') }}" class="btn btn-secondary me-2">View Purchasers</a>
+    <a href="{{ url_for('view_accounts', account_type='All') }}" class="btn btn-info">View All</a>
+
+  </div>
+
+  <!-- Billing Date Selection -->
+  <form method="POST" action="{{ url_for('set_billing_date') }}" class="mb-3">
+    <label>Select Date:</label>
+    <input type="date" name="date" value="{{ session.get('billing_date', '') }}" required>
+    <button type="submit" class="btn btn-primary btn-sm">Set Date</button>
+  </form>
+
+  <!-- Account Form -->
+  <div id="accountForm" class="card p-3 mb-3 form-card" style="display:none;">
+    <h5>Add Account</h5>
+    <form method="POST" action="{{ url_for('add_account') }}">
+      <input name="fname" class="form-control mb-2" placeholder="First Name" required>
+      <input name="mname" class="form-control mb-2" placeholder="Middle Name">
+      <input name="lname" class="form-control mb-2" placeholder="Last Name" required>
+      <input name="sname" class="form-control mb-2" placeholder="Short Name">
+      <select name="type" class="form-select mb-2">
+        <option value="Farmer">Farmer</option>
+        <option value="Purchaser">Purchaser</option>
+      </select>
+      <input name="bank" class="form-control mb-2" placeholder="Bank">
+      <input name="acc_no" class="form-control mb-2" placeholder="Account No">
+      <input name="acc_holder" class="form-control mb-2" placeholder="Account Holder">
+      <input name="ifsc" class="form-control mb-2" placeholder="IFSC">
+      <input name="gst" class="form-control mb-2" placeholder="GST">
+      <input name="address" class="form-control mb-2" placeholder="Address">
+      <input name="mobile" class="form-control mb-2" placeholder="Mobile">
+      <input name="email" class="form-control mb-2" placeholder="Email">
+      <select name="city_id" class="form-select mb-2">
+        {% for city in cities %}
+          <option value="{{ city[0] }}">{{ city[2] }} - {{ city[1] }}</option>
+        {% endfor %}
+      </select>
+      <select name="head_id" class="form-select mb-2">
+        {% for head in heads %}
+          <option value="{{ head[0] }}">{{ head[1] }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-success">Save Account</button>
+    </form>
+  </div>
+
+  <!-- City Form -->
+  <div id="cityForm" class="card p-3 mb-3 form-card" style="display:none;">
+    <h5>Add City</h5>
+    <form method="POST" action="{{ url_for('add_city') }}">
+      <input name="city" class="form-control mb-2" placeholder="City Name" required>
+      <input name="district" class="form-control mb-2" placeholder="District" required>
+      <input name="state" class="form-control mb-2" placeholder="State" required>
+      <input name="pincode" class="form-control mb-2" placeholder="Pincode" required>
+      <button type="submit" class="btn btn-success">Save City</button>
+    </form>
+  </div>
+
+  <!-- Account Head Form -->
+  <div id="headForm" class="card p-3 mb-3 form-card" style="display:none;">
+    <h5>Add Account Head</h5>
+    <form method="POST" action="{{ url_for('add_head') }}">
+      <input name="head_name" class="form-control mb-2" placeholder="Head Name" required>
+      <button type="submit" class="btn btn-success">Save Head</button>
+    </form>
+  </div>
+
+ 
+
+  <!-- Billing Form -->
+  <div id="billingForm" class="card p-3 mb-3 form-card" style="display:none;">
+    <h5>Add Billing</h5>
+    <form method="POST" action="{{ url_for('add_billing') }}">
+      <select name="lot_id" class="form-select mb-2" required>
+        {% for lot in lots %}
+          <option value="{{ lot[0] }}">{{ lot[2] }} - {{ lot[4] }} ({{ lot[1] }})</option>
+        {% endfor %}
+      </select>
+      <input name="bag_no" type="number" class="form-control mb-2" placeholder="Bag No" required>
+      <input name="weight" type="number" step="0.01" class="form-control mb-2" placeholder="Weight (kg)" required>
+      <input name="commission" type="number" step="0.01" class="form-control mb-2" placeholder="Commission" required>
+      <button type="submit" class="btn btn-success">Save Billing</button>
+    </form>
+  </div>
+
+  <hr>
+
+  <!-- Accounts Table -->
+  <h5>Your Accounts</h5>
+  <table class="table table-bordered table-striped table-sm">
+    <thead class="table-dark">
+      <tr>
+        <th>First</th><th>Middle</th><th>Last</th><th>Type</th><th>City</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for acc in accounts %}
+      <tr>
+        <td>{{ acc[1] }}</td>
+        <td>{{ acc[2] }}</td>
+        <td>{{ acc[3] }}</td>
+        <td>{{ acc[5] }}</td>
+        <td>{{ acc[15] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Lots Table -->
+  <h5>Your Lots</h5>
+  <table class="table table-bordered table-striped table-sm">
+    <thead class="table-dark">
+      <tr>
+        <th>Lot No</th><th>Date</th><th>Farmer</th><th>City</th><th>No. of Bags</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lot in lots %}
+      <tr>
+        <td>{{ lot[1] }}</td>
+        <td>{{ lot[2] }}</td>
+        <td>{{ lot[3] }}</td>
+        <td>{{ lot[4] }}</td>
+        <td>{{ lot[5] }}</td>
+        <td>{{ lot[6] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Billing Table -->
+  <h5>Billing</h5>
+  <table class="table table-bordered table-striped table-sm">
+    <thead class="table-dark">
+      <tr>
+        <th>Lot No</th><th>Bag No</th><th>Weight</th><th>Commission</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for bill in billing %}
+      <tr>
+        <td>{{ bill[1] }}</td>
+        <td>{{ bill[2] }}</td>
+        <td>{{ bill[3] }}</td>
+        <td>{{ bill[5] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+
+</body>
+</html>
