@@ -6,6 +6,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import psycopg2
 
 # --------------- Config & App Setup ---------------
 app = Flask(__name__)
@@ -19,14 +20,17 @@ login_manager.login_view = 'login'
 
 
 # --------------- DB Connection Helper ---------------
-def get_conn():
-    # Update credentials if needed
-    return psycopg2.connect(
-        host="localhost",
-        database="chilli_db",
-        user="postgres",
-        password="Dahdah@18012002"
-    )
+
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set")
+
+conn = psycopg2.connect(
+    DATABASE_URL,
+    sslmode="require"
+)
 
 
 # --------------- Flask-Login loader ---------------
@@ -1269,3 +1273,4 @@ def save_weight():
 # ------------------- Run -------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
