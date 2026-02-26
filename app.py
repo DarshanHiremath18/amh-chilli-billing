@@ -8,6 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import psycopg2
 import os
+import traceback
 
 # --------------- Config & App Setup ---------------
 app = Flask(__name__)
@@ -1274,5 +1275,12 @@ def save_weight():
 # ------------------- Run -------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+    
+@app.errorhandler(Exception)
+def handle_exception(e):
+    print("🔥 UNHANDLED EXCEPTION 🔥")
+    traceback.print_exc()
+    return "Internal Server Error", 500
+
 
 
