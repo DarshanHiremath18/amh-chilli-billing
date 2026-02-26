@@ -34,6 +34,10 @@ conn = psycopg2.connect(
     sslmode="require"
 )
 
+def get_conn():
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is not set")
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 # --------------- Flask-Login loader ---------------
 @login_manager.user_loader
@@ -1281,6 +1285,7 @@ def handle_exception(e):
     print("🔥 UNHANDLED EXCEPTION 🔥")
     traceback.print_exc()
     return "Internal Server Error", 500
+
 
 
 
